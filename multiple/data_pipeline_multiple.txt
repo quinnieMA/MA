@@ -1,0 +1,90 @@
+## Multiple数据量变化流程图
+
+```
+原始CSV文件 (1-2号)
+├── acquisition_multiple_1_cleaned.csv: 44,781 obs
+├── acquisition_multiple_2_cleaned.csv: 14,194 obs
+└── 合计: 58,975 obs
+         ↓
+    process_file程序清洗
+    (ID变量转字符串、n.a./n.s./-替换为空)
+         ↓
+临时文件 (acq_mul_1/2.dta): 各文件保留原观测数
+         ↓
+    append合并
+         ↓
+合并后数据集: 58,975 obs
+         ↓
+    检查重复deal_num: 
+    - dup=0: 55,586 obs (94.25%)
+    - dup>0: 3,389 obs (5.75%)
+         ↓
+    按deal_num去重: 删除 3,388 obs
+         ↓
+去重后数据集: 55,587 obs
+         ↓
+    destring所有乘数变量 (从字符串转为数值)
+         ↓
+acq_mul.dta: 55,587 obs
+```
+
+## 完整数据量变化汇总表
+
+| 阶段 | 观测数 | 操作说明 |
+|------|--------|---------|
+| **原始数据合计** | **58,975** | 两个CSV文件总和 |
+| 合并后数据集 | 58,975 | append合并完成 |
+| 重复检查 | - | dup=0: 55,586 (94.25%), dup>0: 3,389 (5.75%) |
+| 按deal_num去重 | 删除 3,388 | 保留每个deal_num第一条记录 |
+| **最终数据集** | **55,587** | acq_mul.dta |
+
+## 变量说明
+
+### 交易前乘数 (Pre-deal multiples) - 以`_ly`结尾(Last Year)
+| 变量名 | 含义 |
+|--------|------|
+| `pre_rev_mul_ly` | 收入乘数(Revenue Multiple) |
+| `pre_ebitda_mul_ly` | EBITDA乘数 |
+| `pre_ebit_mul_ly` | EBIT乘数 |
+| `pre_pbt_mul_ly` | 税前利润乘数(PBT) |
+| `pre_pat_mul_ly` | 税后利润乘数(PAT) |
+| `pre_np_mul_ly` | 净利润乘数(Net Profit) |
+| `pre_ta_mul_ly` | 总资产乘数(Total Assets) |
+| `pre_na_mul_ly` | 净资产乘数(Net Assets) |
+| `pre_cl_mul_ly` | 流动负债乘数(Current Liabilities) |
+| `pre_eq_mul_ly` | 权益乘数(Equity) |
+| `pre_cap_mul_ly` | 市值乘数(Market Cap) |
+
+### 交易后乘数 (Post-deal multiples) - 以`_fy`结尾(First Year)
+| 变量名 | 含义 |
+|--------|------|
+| `post_rev_mul_fy` | 收入乘数 |
+| `post_ebitda_mul_fy` | EBITDA乘数 |
+| `post_ebit_mul_fy` | EBIT乘数 |
+| `post_pbt_mul_fy` | 税前利润乘数 |
+| `post_pat_mul_fy` | 税后利润乘数 |
+| `post_np_mul_fy` | 净利润乘数 |
+| `post_ta_mul_fy` | 总资产乘数 |
+| `post_na_mul_fy` | 净资产乘数 |
+| `post_cl_mul_fy` | 流动负债乘数 |
+| `post_eq_mul_fy` | 权益乘数 |
+| `post_cap_mul_fy` | 市值乘数 |
+
+## 缺失值情况
+
+| 变量 | 缺失值数量 | 缺失率 |
+|------|-----------|--------|
+| `pre_rev_mul_ly` | 18,596 | 33.5% |
+| `pre_ebitda_mul_ly` | 42,577 | 76.6% |
+| `pre_ebit_mul_ly` | 37,655 | 67.7% |
+| `pre_np_mul_ly` | 53,590 | 96.4% |
+| `pre_cap_mul_ly` | 50,789 | 91.4% |
+| `post_na_mul_fy` | 55,587 | 100% (全部缺失) |
+
+## 关键观察
+
+1. **原始数据总量**：58,975条观测，来自2个批次文件
+2. **重复情况**：3,389条观测存在重复deal_num(5.75%)，去重后保留55,587条
+3. **缺失值严重**：部分乘数变量缺失率极高(>90%)，特别是`post_na_mul_fy`全部缺失
+4. **最完整的变量**：`pre_rev_mul_ly`缺失率最低(33.5%)
+5. **核心用途**：这个数据集提供交易前和交易后的各种估值乘数，用于后续的估值分析和绩效评估
