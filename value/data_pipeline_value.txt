@@ -1,0 +1,120 @@
+## Value数据量变化流程图
+
+```
+原始CSV文件 (1-2号)
+├── acquisition_value_1_cleaned.csv: 55,971 obs
+├── acquisition_value_2_cleaned.csv: 3,004 obs
+└── 合计: 58,975 obs
+         ↓
+    process_file程序清洗
+    (ID变量转字符串、n.a./n.s./-/Unknown替换为空)
+         ↓
+临时文件 (acq_value_1/2.dta): 各文件保留原观测数
+         ↓
+    append合并
+         ↓
+合并后数据集: 58,975 obs
+         ↓
+    drop if deal_value==.: 删除 3,389 obs (交易价值缺失)
+         ↓
+    按deal_num去重: 删除 0 obs (无重复)
+         ↓
+    删除冗余变量: 删除 as_reported_fee_income, stake_init_pct, 
+                  stake_acq_pct, stake_final_pct
+         ↓
+    destring所有价值变量 (从字符串转为数值)
+         ↓
+acq_value.dta: 55,586 obs
+         ↓
+    为11个价值变量生成对数版本 (ln_*)
+         ↓
+acq_value_with_ln.dta: 55,586 obs
+```
+
+## 完整数据量变化汇总表
+
+| 阶段 | 观测数 | 操作说明 |
+|------|--------|---------|
+| **原始数据合计** | **58,975** | 两个CSV文件总和 |
+| 合并后数据集 | 58,975 | append合并完成 |
+| 删除交易价值缺失 | 删除 3,389 | drop if deal_value==. |
+| 按deal_num去重 | 删除 0 | 无重复交易编号 |
+| **最终数据集** | **55,586** | acq_value.dta |
+
+## 变量说明
+
+### 核心交易价值变量 (11个)
+| 变量名 | 含义 |
+|--------|------|
+| `deal_value` | 交易价值(美元) |
+| `deal_value_native_currency` | 交易价值(本币) |
+| `deal_equity_value` | 股权价值(美元) |
+| `deal_equity_value_native_currenc` | 股权价值(本币) |
+| `deal_enterprise_value` | 企业价值(美元) |
+| `deal_enterprise_value_native_cur` | 企业价值(本币) |
+| `deal_modelled_enterprise_value` | 模型企业价值(美元) |
+| `deal_modelled_enterprise_value_n` | 模型企业价值(本币) |
+| `deal_total_target_value` | 目标公司总价值(美元) |
+| `deal_total_target_value_native_c` | 目标公司总价值(本币) |
+| `modelled_fee_income` | 模型费用收入 |
+
+### 删除的变量 (4个)
+| 变量名 | 含义 |
+|--------|------|
+| `as_reported_fee_income` | 报告费用收入 |
+| `stake_init_pct` | 初始持股比例 |
+| `stake_acq_pct` | 收购持股比例 |
+| `stake_final_pct` | 最终持股比例 |
+
+### 生成的对数变量 (11个)
+| 变量名 | 来源 |
+|--------|------|
+| `ln_value` | deal_value |
+| `ln_value_native_currency` | deal_value_native_currency |
+| `ln_equity_value` | deal_equity_value |
+| `ln_equity_value_native_currenc` | deal_equity_value_native_currenc |
+| `ln_enterprise_value` | deal_enterprise_value |
+| `ln_enterprise_value_native_cur` | deal_enterprise_value_native_cur |
+| `ln_modelled_enterprise_value` | deal_modelled_enterprise_value |
+| `ln_modelled_enterprise_value_n` | deal_modelled_enterprise_value_n |
+| `ln_total_target_value` | deal_total_target_value |
+| `ln_total_target_value_native_c` | deal_total_target_value_native_c |
+| `ln_modelled_fee_income` | modelled_fee_income |
+
+## 缺失值情况
+
+| 变量 | 缺失值数量 | 缺失率 |
+|------|-----------|--------|
+| `deal_value` | 0 | 0% |
+| `deal_enterprise_value` | 52,687 | 94.8% |
+| `deal_enterprise_value_native_cur` | 52,687 | 94.8% |
+| `deal_equity_value` | 30,455 | 54.8% |
+| `deal_total_target_value` | 13,300 | 23.9% |
+| `modelled_fee_income` | 10,606 | 19.1% |
+
+## 关键观察
+
+1. **原始数据总量**：58,975条观测，来自2个批次文件
+   - 文件1: 55,971 obs (95%)
+   - 文件2: 3,004 obs (5%)
+
+2. **交易价值缺失**：删除3,389条交易价值缺失的记录(5.7%)
+
+3. **无重复交易**：按deal_num去重后无删除，说明每个交易编号唯一
+
+4. **变量精简**：删除了4个不常用变量(stake比例等)
+
+5. **缺失值分析**：
+   - `deal_value`最完整(无缺失)
+   - 企业价值类变量缺失严重(~95%)
+   - 股权价值缺失约55%
+   - 目标公司总价值和费用收入相对完整(缺失20-24%)
+
+6. **对数变换**：为11个价值变量生成对数版本，用于后续回归分析中的正态化处理
+
+## 核心用途
+
+这个数据集提供交易的**各种价值指标**，包括美元价值和本币价值，以及相应的对数变换版本，用于后续的：
+- 交易规模分析
+- 估值研究
+- 回归模型中的因变量或控制变量
